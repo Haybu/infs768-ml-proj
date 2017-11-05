@@ -15,8 +15,8 @@ from utils import commons
 '''
 Examine different values of K, using cross validation with multiple folds
 '''
-def cross_search_parameters(features, labels, kmax, cv):
-    print("Examining a KNN model with kmax {} and cv {}".format(kmax, cv))
+def cross_validate(features, labels, kmax, cv):
+    print("Searching a KNN model with kmax {} and cv {}".format(kmax, cv))
     from sklearn.model_selection import StratifiedKFold
     folds_scores = []
     model_scores = []
@@ -28,7 +28,8 @@ def cross_search_parameters(features, labels, kmax, cv):
         for train_index, test_index in skf.split(features, labels):
             fold_number += 1
             print("------ Starting scoring knn model with K = {} in fold number {} ---------".format(k, fold_number))
-            fold = selected_features_in_fold(features, labels, train_index, test_index)
+            fold = commons.selected_features_in_fold(features, labels
+                    , train_index, test_index)
             x_fold_train = fold['train']['x']
             y_fold_train = fold['train']['y']
             x_fold_test = fold['test']['x']
@@ -43,7 +44,7 @@ def cross_search_parameters(features, labels, kmax, cv):
         model_scores.append(tuple([k, avg]))
         print("Average model score for k {} is {}".format(k, avg))
 
-    print("Examining completed ...{}".format(model_scores))
+    print("Searching completed ...{}".format(model_scores))
     return model_scores
 
 def best_k(tpl):
@@ -57,7 +58,7 @@ def plot_k_accuracy(tpl):
 
 
 def main():
-    K_MAX = 10
+    K_MAX = 15
     NUMBER_OF_FOLDS = 10
 
     print("====  Start =====")
@@ -75,10 +76,10 @@ def main():
     #commons.show_some_digits(x_train_data, y_train)
 
     print("start tuning k")
-    #k_scores = examine_k(features=x_train, labels=y_train, kmax=K_MAX, cv=NUMBER_OF_FOLDS)
-    #k = best_k(k_scores)
-    k_scores = [(2, 0.86236911556906082), (3, 0.87125998528289839), (4, 0.87510151565077765), (5, 0.87660986230921922), (6, 0.87820064155578592), (7, 0.87910605329375335), (8, 0.88053135811604444), (9, 0.88140865992705586)]
-    k = 9
+    k_scores = cross_validate(features=x_train, labels=y_train, kmax=K_MAX, cv=NUMBER_OF_FOLDS)
+    k = best_k(k_scores)
+    #k_scores = [(2, 0.86236911556906082), (3, 0.87125998528289839), (4, 0.87510151565077765), (5, 0.87660986230921922), (6, 0.87820064155578592), (7, 0.87910605329375335), (8, 0.88053135811604444), (9, 0.88140865992705586)]
+    #k = 9
 
     print("start training the knn model with training data")
     knn = KNeighborsClassifier(n_neighbors=k)

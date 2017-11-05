@@ -20,19 +20,18 @@ def frequency(y):
     from scipy.stats import itemfreq
     return itemfreq(y)
 
+def preprocess(features, labels):
+    from sklearn import preprocessing as pp
+    from sklearn.utils import shuffle
+    transformed_features = pp.MinMaxScaler().fit_transform(features)
+    x, y = shuffle(transformed_features, labels, random_state=0)
+    return x, y
 
 def load_digits_data():
     from sklearn.datasets import fetch_mldata
     mnist = fetch_mldata('MNIST original')
     x = mnist.data
     y = mnist.target
-    return x, y
-
-def preprocess(features, labels):
-    from sklearn import preprocessing as pp
-    from sklearn.utils import shuffle
-    transformed_features = pp.MinMaxScaler().fit_transform(features)
-    x, y = shuffle(transformed_features, labels, random_state=0)
     return x, y
 
 def digits_data():
@@ -48,15 +47,15 @@ def digits_data():
             }
 
 def selected_features_in_fold(x, y, train_index, test_index):
-    x_fold_train, x_fold_test = x[train_index], x[test_index]
-    y_fold_train, y_fold_test = y[train_index], y[test_index]
-    return {'train': {'x': x_fold_train,
-                      'y': y_fold_train
+    x_train, x_test = x[train_index], x[test_index]
+    y_train, y_test = y[train_index], y[test_index]
+    return {'train': {'x': x_train,
+                      'y': y_train
                     },
-            'test': {'x': x_fold_test,
-                     'y': y_fold_test
+            'test': {'x': x_test,
+                     'y': y_test
                     }
-            }            
+            }
 
 '''
     calculate the HOG features for each image in the database and save them
