@@ -1,5 +1,5 @@
 '''
-This program implements training and testing a KNN model
+This program implements a KNN model to predict handwritten digits.
 '''
 
 # %%
@@ -12,49 +12,29 @@ from operator import itemgetter
 from utils import commons
 
 # %%
-def k_range(max):
-    return range(2, max)
-
-def feature_selector():
-    from sklearn.ensemble import ExtraTreesClassifier
-    from sklearn.feature_selection import SelectFromModel
-    rating_model = ExtraTreesClassifier()
-    return SelectFromModel(rating_model, prefit=False)
-
-def selected_features_in_fold(x, y, train_index, test_index):
-    x_fold_train, x_fold_test = x[train_index], x[test_index]
-    y_fold_train, y_fold_test = y[train_index], y[test_index]
-    selector = feature_selector()
-    x_fold_train_selected = selector.fit_transform(x_fold_train, y_fold_train)
-    x_fold_train_selected_indices = selector.get_support(indices=True)  # a mask
-    x_fold_test_selected = x_fold_test[:,x_fold_train_selected_indices]
-    return {
-        'x_fold_train_selected': x_fold_train_selected,
-        'x_fold_test_selected': x_fold_test_selected,
-        'y_fold_train': y_fold_train,
-        'y_fold_test': y_fold_test
-    }
-
-def examine_k(features, labels, kmax, cv):
+'''
+Examine different values of K, using cross validation with multiple folds
+'''
+def cross_search_parameters(features, labels, kmax, cv):
     print("Examining a KNN model with kmax {} and cv {}".format(kmax, cv))
     from sklearn.model_selection import StratifiedKFold
     folds_scores = []
     model_scores = []
     skf = StratifiedKFold(n_splits=cv)
 
-    for k in k_range(kmax):
+    for k in range(2, kmax):
         knn = KNeighborsClassifier(n_neighbors=k)
         fold_number = 0
         for train_index, test_index in skf.split(features, labels):
             fold_number += 1
             print("------ Starting scoring knn model with K = {} in fold number {} ---------".format(k, fold_number))
             fold = selected_features_in_fold(features, labels, train_index, test_index)
-            x_fold_train_selected = fold['x_fold_train_selected']
-            y_fold_train = fold['y_fold_train']
-            x_fold_test_selected = fold['x_fold_test_selected']
-            y_fold_test = fold['y_fold_test']
-            knn.fit(x_fold_train_selected, y_fold_train)
-            score = knn.score(x_fold_test_selected, y_fold_test)
+            x_fold_train = fold['train']['x']
+            y_fold_train = fold['train']['y']
+            x_fold_test = fold['test']['x']
+            y_fold_test = fold['test']['y']
+            knn.fit(x_fold_train, y_fold_train)
+            score = knn.score(x_fold_test, y_fold_test)
             folds_scores.append(score)
             print("------ Complete scoring knn model with K = {} in fold number {} ---------".format(k, fold_number))
 
@@ -82,48 +62,42 @@ def main():
 
     print("====  Start =====")
     data = commons.digits_data()
-    x_train_data = data['x_train']
-    y_train_data = data['y_train']
-    x_test_data = data['x_test']
-    y_test_data = data['y_test']
+
+    x_train_data = data['train']['x']
+    x_train = commons.hog(x_train_data)
+    y_train = data['train']['y']
+
+    x_test_data = data['test']['x']
+    x_test = commons.hog(x_test_data)
+    y_test = data['test']['y']
 
     #show some sample images
-    commons.show_some_digits(x_train_data, y_train_data)
-
-    x_train, y_train = commons.preprocess(x_train_data, y_train_data)
-    x_test, y_test = commons.preprocess(x_test_data, y_test_data)
+    #commons.show_some_digits(x_train_data, y_train)
 
     print("start tuning k")
     #k_scores = examine_k(features=x_train, labels=y_train, kmax=K_MAX, cv=NUMBER_OF_FOLDS)
     #k = best_k(k_scores)
-    k_scores = [(2, 0.96273320002053331), (3, 0.96578327108267836), (4, 0.96637210862977629), (5, 0.96683318610161617), (6, 0.96689318617835784)]
-    k = 6
+    k_scores = [(2, 0.86236911556906082), (3, 0.87125998528289839), (4, 0.87510151565077765), (5, 0.87660986230921922), (6, 0.87820064155578592), (7, 0.87910605329375335), (8, 0.88053135811604444), (9, 0.88140865992705586)]
+    k = 9
 
     print("start training the knn model with training data")
     knn = KNeighborsClassifier(n_neighbors=k)
-
-    selector = feature_selector()
-    x_train_selected = selector.fit_transform(x_train, y_train)  # features selection
-    x_train_selected_indices = selector.get_support(indices=True)
-    knn.fit(x_train_selected, y_train)
-
-    x_test_selected = x_test[:,x_train_selected_indices]
+    knn.fit(x_train, y_train)
 
     print("start scoring the model with the testing data")
-    y_predict = knn.predict(x_test_selected)
+    y_predict = knn.predict(x_test)
 
-    model_accuracy_score = accuracy_score(y_test, y_predict)
+    model_accuracy_score = commons.accuracy_score(y_test, y_predict)
     print("Final model score is {}".format(model_accuracy_score))
 
     commons.print_confusion_matrix(y_test, y_predict)
     commons.print_classification_report(y_test, y_predict)
-    commons.plot_confusion_matrix(y_test, y_predict)
     plot_k_accuracy(k_scores)
-
 
     print("====  Done =====")
 
 
 # %%
 #if __name__ == '__main__':
+reload(commons)
 main()

@@ -6,6 +6,21 @@ import numpy as np
 
 # ------------ commons --------
 
+def plot_histogram(y):
+    import matplotlib.pyplot as plt
+    import numpy as np; np.random.seed(1)
+    a = np.random.rayleigh(scale=3,size=100)
+    bins = np.arange(10)
+    frq, edges = np.histogram(a, bins)
+    fig, ax = plt.subplots()
+    ax.bar(edges[:-1], frq, width=np.diff(edges), ec="k", align="edge")
+    plt.show()
+
+def frequency(y):
+    from scipy.stats import itemfreq
+    return itemfreq(y)
+
+
 def load_digits_data():
     from sklearn.datasets import fetch_mldata
     mnist = fetch_mldata('MNIST original')
@@ -21,13 +36,41 @@ def preprocess(features, labels):
     return x, y
 
 def digits_data():
-    features, labels = load_digits_data()
-    return {
-        'x_train': features[0:60000,:],
-        'y_train': labels[0:60000],
-        'x_test': features[60000:,:],
-        'y_test': labels[60000:]
-    }
+    x, y = load_digits_data()
+    features =  np.array(x, 'int16')
+    labels = np.array(y, 'int')
+    return {'train': {'x': features[0:60000,:],
+                      'y': labels[0:60000]
+                    },
+            'test': {'x': features[60000:,:],
+                     'y': labels[60000:]
+                    }
+            }
+
+def selected_features_in_fold(x, y, train_index, test_index):
+    x_fold_train, x_fold_test = x[train_index], x[test_index]
+    y_fold_train, y_fold_test = y[train_index], y[test_index]
+    return {'train': {'x': x_fold_train,
+                      'y': y_fold_train
+                    },
+            'test': {'x': x_fold_test,
+                     'y': y_fold_test
+                    }
+            }            
+
+'''
+    calculate the HOG features for each image in the database and save them
+    in another numpy array named hog_feature
+'''
+def hog(features):
+    from skimage.feature import hog
+    list_hog_fd = []
+    for feature in features:
+        fd = hog(feature.reshape((28, 28)), orientations=9,
+                 pixels_per_cell=(14, 14), cells_per_block=(1, 1),
+                 visualise=False)
+        list_hog_fd.append(fd)
+    return np.array(list_hog_fd, 'float64')
 
 def plot(xdata, ydata, xlabel, ylabel):
     plt.plot(xdata, ydata)
