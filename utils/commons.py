@@ -46,7 +46,23 @@ def digits_data():
                     }
             }
 
-def selected_features_in_fold(x, y, train_index, test_index):
+def digits_data_slim():
+    from sklearn import datasets
+    from sklearn.model_selection import train_test_split
+    digits = datasets.load_digits()
+    x = digits.data
+    y = digits.target
+    xtrain, xtest, ytrain, ytest = train_test_split(x, y
+                               , test_size=0.33, random_state=42)
+    return {'train': {'x': xtrain,
+                      'y': ytrain
+                    },
+            'test': {'x': xtest,
+                     'y': ytest
+                    }
+            }
+
+def fold_data(x, y, train_index, test_index):
     x_train, x_test = x[train_index], x[test_index]
     y_train, y_test = y[train_index], y[test_index]
     return {'train': {'x': x_train,
@@ -57,16 +73,53 @@ def selected_features_in_fold(x, y, train_index, test_index):
                     }
             }
 
+def feature_selector():
+    from sklearn.ensemble import ExtraTreesClassifier
+    from sklearn.feature_selection import SelectFromModel
+    rating_model = ExtraTreesClassifier()
+    return SelectFromModel(rating_model, prefit=False)
+
+def selected_features_in_fold(x, y, train_index, test_index):
+    x_fold_train, x_fold_test = x[train_index], x[test_index]
+    y_fold_train, y_fold_test = y[train_index], y[test_index]
+    selector = feature_selector()
+    x_fold_train_selected = selector.fit_transform(x_fold_train, y_fold_train)
+    x_fold_train_selected_indices = selector.get_support(indices=True)  # a mask
+    x_fold_test_selected = x_fold_test[:,x_fold_train_selected_indices]
+    return {'train': {'x': x_fold_train_selected,
+                      'y': y_fold_train
+                    },
+            'test': {'x': x_fold_test_selected,
+                     'y': y_fold_test
+                    }
+            }
+
 '''
     calculate the HOG features for each image in the database and save them
     in another numpy array named hog_feature
 '''
-def hog(features):
+def hog(features):    
     from skimage.feature import hog
     list_hog_fd = []
     for feature in features:
         fd = hog(feature.reshape((28, 28)), orientations=9,
                  pixels_per_cell=(14, 14), cells_per_block=(1, 1),
+                 visualise=False)
+        list_hog_fd.append(fd)
+    return np.array(list_hog_fd, 'float64')
+
+def plot(xdata, ydata, xlabel, ylabel):
+    plt.plot(xdata, ydata)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.show()
+
+def hog_slim(features):
+    from skimage.feature import hog
+    list_hog_fd = []
+    for feature in features:
+        fd = hog(feature.reshape((8, 8)), orientations=9,
+                 pixels_per_cell=(4, 4), cells_per_block=(1, 1),
                  visualise=False)
         list_hog_fd.append(fd)
     return np.array(list_hog_fd, 'float64')
@@ -121,6 +174,20 @@ def plot_confusion_matrix(expected, predicted, title='Confusion matrix', cmap=pl
     """
     from sklearn.metrics import confusion_matrix
     cm = confusion_matrix(expected, predicted)
+    plt.figure(1, figsize=(15, 12), dpi=160)
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
+def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
+    """
+    Plots confusion matrix,
+
+    cm - confusion matrix
+    """
     plt.figure(1, figsize=(15, 12), dpi=160)
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)

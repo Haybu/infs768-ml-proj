@@ -1,5 +1,5 @@
 '''
-This program implements a KNN model to predict handwritten digits.
+This program implements training and testing a KNN model
 '''
 
 # %%
@@ -7,16 +7,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
+
 from io import BytesIO
 from operator import itemgetter
 from utils import commons
 
 # %%
-'''
-Examine different values of K, using cross validation with multiple folds
-'''
 def cross_validate(features, labels, kmax, cv):
-    print("Searching a KNN model with kmax {} and cv {}".format(kmax, cv))
+    print("Examining a KNN model with kmax {} and cv {}".format(kmax, cv))
     from sklearn.model_selection import StratifiedKFold
     folds_scores = []
     model_scores = []
@@ -28,14 +26,14 @@ def cross_validate(features, labels, kmax, cv):
         for train_index, test_index in skf.split(features, labels):
             fold_number += 1
             print("------ Starting scoring knn model with K = {} in fold number {} ---------".format(k, fold_number))
-            fold = commons.fold_data(features, labels
-                    , train_index, test_index)
-            x_fold_train = fold['train']['x']
+            fold = commons.selected_features_in_fold(features, labels
+                         , train_index, test_index)
+            x_fold_train_selected = fold['train']['x']
             y_fold_train = fold['train']['y']
-            x_fold_test = fold['test']['x']
+            x_fold_test_selected = fold['test']['x']
             y_fold_test = fold['test']['y']
-            knn.fit(x_fold_train, y_fold_train)
-            score = knn.score(x_fold_test, y_fold_test)
+            knn.fit(x_fold_train_selected, y_fold_train)
+            score = knn.score(x_fold_test_selected, y_fold_test)
             folds_scores.append(score)
             print("------ Complete scoring knn model with K = {} in fold number {} ---------".format(k, fold_number))
 
@@ -44,7 +42,7 @@ def cross_validate(features, labels, kmax, cv):
         model_scores.append(tuple([k, avg]))
         print("Average model score for k {} is {}".format(k, avg))
 
-    print("Searching completed ...{}".format(model_scores))
+    print("Examining completed ...{}".format(model_scores))
     return model_scores
 
 def best_k(tpl):
@@ -57,36 +55,36 @@ def plot_k_accuracy(tpl):
     commons.plot(k_values, avg_values, 'Number of Neighbors K', 'Accuracy Score')
 
 
+# %%
 def main():
-    K_MAX = 15
-    NUMBER_OF_FOLDS = 10
+    K_MAX = 10
+    NUMBER_OF_FOLDS = 5
 
     print("====  Start =====")
     data = commons.digits_data()
-
-    x_train_data = data['train']['x']
-    x_train = commons.hog(x_train_data)
+    x_train = data['train']['x']
     y_train = data['train']['y']
-
-    x_test_data = data['test']['x']
-    x_test = commons.hog(x_test_data)
+    x_test = data['test']['x']
     y_test = data['test']['y']
-
-    #show some sample images
-    #commons.show_some_digits(x_train_data, y_train)
 
     print("start tuning k")
     k_scores = cross_validate(features=x_train, labels=y_train, kmax=K_MAX, cv=NUMBER_OF_FOLDS)
     k = best_k(k_scores)
-    #k_scores = [(2, 0.86236911556906082), (3, 0.87125998528289839), (4, 0.87510151565077765), (5, 0.87660986230921922), (6, 0.87820064155578592), (7, 0.87910605329375335), (8, 0.88053135811604444), (9, 0.88140865992705586)]
-    #k = 9
+    #k_scores = [(2, 0.96273320002053331), (3, 0.96578327108267836), (4, 0.96637210862977629), (5, 0.96683318610161617), (6, 0.96689318617835784)]
+    #k = 6
 
     print("start training the knn model with training data")
     knn = KNeighborsClassifier(n_neighbors=k)
-    knn.fit(x_train, y_train)
+
+    selector = commons.feature_selector()
+    x_train_selected = selector.fit_transform(x_train, y_train)  # features selection
+    x_train_selected_indices = selector.get_support(indices=True)
+    knn.fit(x_train_selected, y_train)
+
+    x_test_selected = x_test[:,x_train_selected_indices]
 
     print("start scoring the model with the testing data")
-    y_predict = knn.predict(x_test)
+    y_predict = knn.predict(x_test_selected)
 
     model_accuracy_score = commons.accuracy_score(y_test, y_predict)
     print("Final model score is {}".format(model_accuracy_score))
@@ -96,7 +94,6 @@ def main():
     plot_k_accuracy(k_scores)
 
     print("====  Done =====")
-
 
 # %%
 #if __name__ == '__main__':

@@ -41,12 +41,25 @@ def digits_data():
                      }
             }
 
+def plot_histogram(y):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    bins = np.arange(11)
+    frq, edges = np.histogram(y, bins)
+    fig, ax = plt.subplots()
+    ax.bar(edges[:-1], frq, width=np.diff(edges), ec="k", align="edge")
+    plt.show()
+
+def frequency(y):
+    from scipy.stats import itemfreq
+    return itemfreq(y)
+
 # %%
 import numpy as np
-data = digits_data()
-xtrain = data['train']['x']
-ytrain = data['train']['y']
-print(xtrain.shape)
-print(ytrain.shape)
-print(type(xtrain))
-print(type(ytrain))
+gamma_range = np.outer(np.logspace(-3, 0, 4),np.array([1,5]))
+gamma_range = gamma_range.flatten()
+print(gamma_range)
+
+C_range = np.outer(np.logspace(-1, 1, 3),np.array([1,5]))
+C_range = C_range.flatten()
+print(C_range)
