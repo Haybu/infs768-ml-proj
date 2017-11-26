@@ -3,8 +3,48 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 import numpy as np
 
+from sklearn import metrics
+from sklearn import pipeline
+from sklearn import preprocessing
+from sklearn.model_selection import cross_val_predict
+from sklearn.model_selection import GridSearchCV
+from sklearn import feature_selection
+
 
 # ------------ commons --------
+
+# %%
+def gridCV(clf, params, xtrain, ytrain):
+    pipe = pipeline.Pipeline([
+                            #     ('scaler', preprocessing.StandardScaler()),
+                                 ('selector', feature_selector()),
+                                 ('clf', clf)
+                              ])
+    folds = 5
+    verbose = 2
+    scoring = 'accuracy'
+
+    gs = GridSearchCV(estimator=pipe, param_grid=params
+                     , scoring=scoring, cv=folds, verbose=verbose)
+    gs.fit(xtrain, ytrain)
+    #print(gs.cv_results_)
+    return gs
+
+# %%
+def score(grid, xtest, ytest):
+    # manually extract the best models from the grid search to re-build the pipeline
+    best_clf = grid.best_estimator_.named_steps['clf']
+    print("Best Estimator: {}".format(best_clf))
+    best_pipeline = pipeline.Pipeline([
+                        ('selector', feature_selector()),
+                        ('classifier', best_clf)
+                 ])
+
+    # passing gs_clf here would run the grid search again inside cross_val_predict
+    y_predicted = cross_val_predict(best_pipeline, xtest, ytest)
+    #print(metrics.classification_report(ytest, y_predicted, digits=3))
+    print_confusion_matrix(ytest, y_predicted)
+    print_classification_report(ytest, y_predicted)
 
 def plot_histogram(y):
     import matplotlib.pyplot as plt
@@ -98,7 +138,7 @@ def selected_features_in_fold(x, y, train_index, test_index):
     calculate the HOG features for each image in the database and save them
     in another numpy array named hog_feature
 '''
-def hog(features):    
+def hog(features):
     from skimage.feature import hog
     list_hog_fd = []
     for feature in features:

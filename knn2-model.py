@@ -1,5 +1,7 @@
 '''
 This program implements training and testing a KNN model
+
+uses feature selection (FS) in every fold
 '''
 
 # %%

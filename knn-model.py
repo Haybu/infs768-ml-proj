@@ -1,5 +1,7 @@
 '''
 This program implements a KNN model to predict handwritten digits.
+
+use hog to select features before training the models
 '''
 
 # %%
