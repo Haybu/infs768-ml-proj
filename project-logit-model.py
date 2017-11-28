@@ -1,5 +1,5 @@
 # %%
-from sklearn.neural_network import MLPClassifier
+from sklearn.linear_model import LogisticRegression
 from utils import commons
 
 # %%
@@ -12,21 +12,22 @@ def classifier_config():
                   }]
 
     return {
-         'classifier': linear_model.LogisticRegression(),
+         'classifier': LogisticRegression(),
          'parameters': param_grid
       }
 
 # %%
 def run():
-    data = commons.digits_data_slim(); # commons.digits_data()
-    x_train = data['train']['x']
+    data = commons.digits_data() # commons.digits_data_slim()
+    x_train = data['train']['x'] / 255.
     y_train = data['train']['y']
-    x_test = data['test']['x']
+    x_test = data['test']['x'] / 255.
     y_test = data['test']['y']
 
     config = classifier_config()
-    grid = commons.gridCV(config['classifier'], config['parameters'], x_train, y_train)
-    commons.score(grid, x_test, y_test)
+    model = commons.perform_grid_search(config['classifier']
+                        , config['parameters'], x_train, y_train)
+    commons.score(model, x_test, y_test)
 
 # %%
 print("====  Start =====")

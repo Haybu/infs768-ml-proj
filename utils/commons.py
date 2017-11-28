@@ -1,20 +1,25 @@
 # Standard scientific Python imports
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
+from time import time
 import numpy as np
+from operator import itemgetter
 
 from sklearn import metrics
 from sklearn import pipeline
 from sklearn import preprocessing
 from sklearn.model_selection import cross_val_predict
+from sklearn.model_selection import  cross_val_score
 from sklearn.model_selection import GridSearchCV
 from sklearn import feature_selection
-
+from sklearn.tree import export_graphviz
+import os
+import subprocess
 
 # ------------ commons --------
 
 # %%
-def gridCV(clf, params, xtrain, ytrain):
+def perform_grid_search(clf, params, xtrain, ytrain):
     pipe = pipeline.Pipeline([
                             #     ('scaler', preprocessing.StandardScaler()),
                                  ('selector', feature_selector()),
@@ -26,25 +31,40 @@ def gridCV(clf, params, xtrain, ytrain):
 
     gs = GridSearchCV(estimator=pipe, param_grid=params
                      , scoring=scoring, cv=folds, verbose=verbose)
+
+    start = time()
     gs.fit(xtrain, ytrain)
-    #print(gs.cv_results_)
-    return gs
+    print(("\nGridSearchCV took {:.2f} "
+           "seconds for {:d} candidate "
+           "parameter settings.").format(time() - start,
+                len(gs.grid_scores_)))
+    top_params = report(gs.grid_scores_, 3)
+    print("\n\n-- Best Parameters:")
+    for k, v in top_params.items():
+        print("parameter: {:<20s} setting: {}".format(k, v))
+    print("\n")
+    # manually extract the best models from the grid search to re-build the pipeline
+    best_clf = gs.best_estimator_.named_steps['clf']
+    print("Best Estimator: {}\n".format(best_clf))
+    return best_clf
 
 # %%
-def score(grid, xtest, ytest):
-    # manually extract the best models from the grid search to re-build the pipeline
-    best_clf = grid.best_estimator_.named_steps['clf']
-    print("Best Estimator: {}".format(best_clf))
-    best_pipeline = pipeline.Pipeline([
+def score(clf, xtest, ytest):
+    pl = pipeline.Pipeline([
                         ('selector', feature_selector()),
-                        ('classifier', best_clf)
+                        ('classifier', clf)
                  ])
 
     # passing gs_clf here would run the grid search again inside cross_val_predict
-    y_predicted = cross_val_predict(best_pipeline, xtest, ytest)
+    y_predicted = cross_val_predict(pl, xtest, ytest)
+    scores = cross_val_score(pl, xtest, ytest)
     #print(metrics.classification_report(ytest, y_predicted, digits=3))
     print_confusion_matrix(ytest, y_predicted)
+    print("\n")
     print_classification_report(ytest, y_predicted)
+    print("\n")
+    print("mean: {:.3f} (std: {:.3f})".format(scores.mean(), scores.std()) )
+
 
 def plot_histogram(y):
     import matplotlib.pyplot as plt
@@ -183,6 +203,56 @@ def print_confusion_matrix(expected, predicted):
 def print_classification_report(expected, predited):
     from sklearn.metrics import classification_report
     print(classification_report(expected, predited))
+
+def visualize_tree(tree, feature_names, fn="dt"):
+    """Create tree png using graphviz.
+
+    Args
+    ----
+    tree -- scikit-learn Decision Tree.
+    feature_names -- list of feature names.
+    fn -- [string], root of filename, default `dt`.
+    """
+    dotfile = fn + ".dot"
+    pngfile = fn + ".png"
+
+    with open(dotfile, 'w') as f:
+        export_graphviz(tree, out_file=f,
+                        feature_names=feature_names)
+
+    command = ["dot", "-Tpng", dotfile, "-o", pngfile]
+    try:
+        subprocess.check_call(command)
+    except:
+        exit("Could not run dot, ie graphviz, "
+             "to produce visualization")
+
+def report(grid_scores, n_top=3):
+    """Report top n_top parameters settings, default n_top=3.
+
+    Args
+    ----
+    grid_scores -- output from grid or random search
+    n_top -- how many to report, of top models
+
+    Returns
+    -------
+    top_params -- [dict] top parameter settings found in
+                  search
+    """
+    top_scores = sorted(grid_scores,
+                        key=itemgetter(1),
+                        reverse=True)[:n_top]
+    for i, score in enumerate(top_scores):
+        print("Model with rank: {0}".format(i + 1))
+        print(("Mean validation score: "
+               "{0:.3f} (std: {1:.3f})").format(
+               score.mean_validation_score,
+               np.std(score.cv_validation_scores)))
+        print("Parameters: {0}".format(score.parameters))
+        print("")
+
+    return top_scores[0].parameters
 
 #------ end commons -----------
 
