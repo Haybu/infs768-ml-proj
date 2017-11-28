@@ -22,7 +22,7 @@ import subprocess
 def perform_grid_search(clf, params, xtrain, ytrain):
     pipe = pipeline.Pipeline([
                             #     ('scaler', preprocessing.StandardScaler()),
-                                 ('selector', feature_selector()),
+                                 ('selector', feature_selector_chi2(90)),
                                  ('clf', clf)
                               ])
     folds = 5
@@ -133,11 +133,23 @@ def fold_data(x, y, train_index, test_index):
                     }
             }
 
-def feature_selector():
+def feature_selector_from_model(number_of_trees):
     from sklearn.ensemble import ExtraTreesClassifier
     from sklearn.feature_selection import SelectFromModel
-    rating_model = ExtraTreesClassifier()
+    # Fits a number of randomized decision trees (30 for example)
+    rating_model = ExtraTreesClassifier(n_estimators=number_of_trees)
     return SelectFromModel(rating_model, prefit=False)
+
+def feature_selector_chi2(percent_to_keep):
+    from sklearn.feature_selection import SelectPercentile
+    from sklearn.feature_selection import chi2
+    # percentile to keep (90% for example)
+    return SelectPercentile(score_func=chi2, percentile=percent_to_keep)
+
+def feature_selector_variance(variance_threshold):
+    from sklearn.feature_selection import VarianceThreshold
+    # Arbitrarily set of threshold (0.1 for example)
+    return VarianceThreshold(threshold = variance_threshold)
 
 def selected_features_in_fold(x, y, train_index, test_index):
     x_fold_train, x_fold_test = x[train_index], x[test_index]

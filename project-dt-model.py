@@ -14,14 +14,6 @@ def classifier_config():
               "clf__max_features": [50],
               }
 
-    param_slim = {"clf__criterion": ["entropy"],
-                  "clf__min_samples_split": [50],
-                  "clf__max_depth": [None, 32],
-                  "clf__min_samples_leaf": [10],
-                  "clf__max_leaf_nodes": [None, 10],
-                  "clf__max_features": [10],
-                  }
-
     return {
          'classifier': DecisionTreeClassifier(),
          'parameters': param_grid
