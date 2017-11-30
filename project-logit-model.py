@@ -19,14 +19,18 @@ def classifier_config():
 # %%
 def run():
     data = commons.digits_data() # commons.digits_data_slim()
-    x_train = data['train']['x'] / 255.
+    x_train = data['train']['x'] # / 255.
     y_train = data['train']['y']
-    x_test = data['test']['x'] / 255.
+    x_test = data['test']['x'] # / 255.
     y_test = data['test']['y']
 
     config = classifier_config()
+    selector = commons.feature_selector_chi2(90)
     model = commons.perform_grid_search(config['classifier']
-                        , config['parameters'], x_train, y_train)
+                        , config['parameters']
+                        , selector
+                        , x_train
+                        , y_train)
     commons.score(model, x_test, y_test)
 
 # %%

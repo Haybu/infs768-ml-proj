@@ -19,18 +19,20 @@ import subprocess
 # ------------ commons --------
 
 # %%
-def perform_grid_search(clf, params, xtrain, ytrain):
+def perform_grid_search(clf, params, selector, xtrain, ytrain, folds=5):
     pipe = pipeline.Pipeline([
                             #     ('scaler', preprocessing.StandardScaler()),
-                                 ('selector', feature_selector_chi2(90)),
+                                 ('selector', selector),
                                  ('clf', clf)
                               ])
-    folds = 5
     verbose = 2
     scoring = 'accuracy'
 
     gs = GridSearchCV(estimator=pipe, param_grid=params
-                     , scoring=scoring, cv=folds, verbose=verbose)
+                     , scoring=scoring
+                     , cv=folds
+                     , verbose=verbose
+                     , n_jobs=1)
 
     start = time()
     gs.fit(xtrain, ytrain)
@@ -39,14 +41,25 @@ def perform_grid_search(clf, params, xtrain, ytrain):
            "parameter settings.").format(time() - start,
                 len(gs.grid_scores_)))
     top_params = report(gs.grid_scores_, 3)
-    print("\n\n-- Best Parameters:")
+    print("\n\n-- Best first {} Parameters:".format(3))
     for k, v in top_params.items():
         print("parameter: {:<20s} setting: {}".format(k, v))
     print("\n")
     # manually extract the best models from the grid search to re-build the pipeline
     best_clf = gs.best_estimator_.named_steps['clf']
     print("Best Estimator: {}\n".format(best_clf))
+    print("\n")
+    print(gs.best_estimator_.steps)
     return best_clf
+
+def sfs_logit_reg(clf, fwd=True, flt=False, folds=2):
+    from mlxtend.feature_selection import SequentialFeatureSelector as SFS
+    return SFS(estimator=clf,
+        forward=fwd,
+        floating=flt,
+        scoring='accuracy',
+        n_jobs=1,
+        cv=folds)
 
 # %%
 def score(clf, xtest, ytest):

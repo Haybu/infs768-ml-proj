@@ -38,8 +38,12 @@ def run():
     y_test = data['test']['y']
 
     config = classifier_config()
+    selector = commons.feature_selector_chi2(90)
     model = commons.perform_grid_search(config['classifier']
-                           , config['parameters'], x_train, y_train)
+                           , config['parameters']
+                           , selector
+                           , x_train
+                           , y_train)
     print("\n")
     viz_tree(model)
     print("\n")
