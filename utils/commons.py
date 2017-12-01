@@ -50,9 +50,9 @@ def perform_grid_search(clf, params, selector, xtrain, ytrain, folds=5):
     print(gs.best_estimator_.steps)
     return best_clf
 
-def score(clf, xtest, ytest):
+def score(clf, selector, xtest, ytest):
     pl = pipeline.Pipeline([
-                        ('selector', feature_selector()),
+                        ('selector', selector),
                         ('classifier', clf)
                  ])
 
@@ -127,3 +127,30 @@ def visualize_tree(tree, feature_names, fn="dt"):
     except:
         exit("Could not run dot, ie graphviz, "
              "to produce visualization")
+
+def report(grid_scores, n_top=3):
+    """Report top n_top parameters settings, default n_top=3.
+
+    Args
+    ----
+    grid_scores -- output from grid or random search
+    n_top -- how many to report, of top models
+
+    Returns
+    -------
+    top_params -- [dict] top parameter settings found in
+                  search
+    """
+    top_scores = sorted(grid_scores,
+                        key=itemgetter(1),
+                        reverse=True)[:n_top]
+    for i, score in enumerate(top_scores):
+        print("Model with rank: {0}".format(i + 1))
+        print(("Mean validation score: "
+               "{0:.3f} (std: {1:.3f})").format(
+               score.mean_validation_score,
+               np.std(score.cv_validation_scores)))
+        print("Parameters: {0}".format(score.parameters))
+        print("")
+
+    return top_scores[0].parameters

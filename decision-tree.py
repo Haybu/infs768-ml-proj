@@ -12,7 +12,7 @@ def classifier_config():
               "clf__min_samples_leaf": [100, 300, 600],
               "clf__max_leaf_nodes": [None, 10],
               "clf__max_features": [50],
-              }
+          }
 
     return {
          'classifier': DecisionTreeClassifier(),
@@ -47,11 +47,12 @@ def run():
     print("\n")
     viz_tree(model)
     print("\n")
-    commons.score(model, x_test, y_test)
+
+    commons.score(model, selector, x_test, y_test)
 
 
 # %%
-print("====  Start =====")
-reload(commons)
-run()
-print("====  End =====")
+if __name__ == "__main__":
+    print("====  Start =====")
+    run()
+    print("====  End =====")

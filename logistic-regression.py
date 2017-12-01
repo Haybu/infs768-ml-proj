@@ -31,10 +31,11 @@ def run():
                         , selector
                         , x_train
                         , y_train)
-    commons.score(model, x_test, y_test)
+                        
+    commons.score(model, selector, x_test, y_test)
 
 # %%
-print("====  Start =====")
-reload(commons)
-run()
-print("====  End =====")
+if __name__ == "__main__":
+    print("====  Start =====")
+    run()
+    print("====  End =====")
