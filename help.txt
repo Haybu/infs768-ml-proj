@@ -1,12 +1,8 @@
-# infs768-ml-proj
-
 A Python sklearn machine learning to train and test a Logistic Regression, Decision Tree and Neural Network classifiers. MNIST handwritten digits dataset is used.
 
 To run:
 
-1- clone this repository and cd to project home directory
-  $ git clone https://github.com/Haybu/infs768-ml-proj.git
-  $ cd ./infs768-ml-proj
+1- unzip this zip file somewhere in your system and get into the directory of project home directory
 2- install anaconda from https://conda.io/docs/user-guide/install/index.html
 3- create a new environment:   
   $ conda create -n myenv
@@ -23,6 +19,3 @@ To run:
   $ python ./decision-tree.py
 
 Please note, each program takes time to fit and test the model.
-
-Enjoy.
-Haytham Mohamed.
